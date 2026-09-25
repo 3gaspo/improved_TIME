@@ -8,6 +8,14 @@ finite-coverage repair where that behavior belongs in the common layer.
 
 ## Runtime and lifecycle infrastructure
 
+- Added the shared `computed` task state: outer launch interruption changes
+  only unfinished `running` tasks, recovery finalizes computed tasks without
+  repeating their computation, and consumers still select only `completed`
+  inputs. Added compact dependency references so child caches include only
+  stage-relevant producer identity instead of recursive manifests.
+- Added the common finite-validation mask used by active selecting children:
+  both context and future need finite support; an empty usable set is handled
+  by each experiment's explicit default rather than by this shared helper.
 - Added the `TIME_DATA_ROOT`, `TIME_DATASET`, `TIME_METADATA`, `TIME_WEIGHTS`,
   `TIME_OUTPUTS`, and `TIME_LOGS` path contract and ignored local placeholders.
 - Added a revision-pinned, resumable downloader and saved-Arrow validation for
@@ -19,8 +27,11 @@ finite-coverage repair where that behavior belongs in the common layer.
 - Added compact `metrics_summary.json` artifacts with finite and total metric
   counts while retaining raw per-window metrics separately.
 - Added population standard deviation and variance on the same finite metric
-  cells, plus a temporary raw-metric refresh that preserves existing means and
-  metadata and requires no forecast rerun.
+  cells, preserving the existing arithmetic means and coverage.
+  Seasonal Naive uses this same saver when creating its evaluation grid;
+  focused coverage verifies that path. A model/Seasonal variance ratio uses
+  Seasonal variance, not Seasonal mean squared. Temporary experiment refresh
+  scripts and diagnostic evidence are not part of this maintained layer.
 - Added reusable DGX/Selena runtime fronts, project-scoped artifact clearing,
   code/result synchronization, and publication helpers. Improved TIME owns
   their source but remains a non-executing parent with no cluster state.
@@ -30,6 +41,10 @@ finite-coverage repair where that behavior belongs in the common layer.
   when clearing Selena outputs.
 - Added accelerator-synchronized inference timing that excludes model loading,
   dataset construction, metric computation, and result saving.
+- Made resource diagnostics a shared cluster contract: every allocation logs
+  visible accelerators, GPU and host memory, and explicit cgroup
+  available/unavailable state, while model and CPU helper stages emit a common
+  selected-device event for the device they actually use.
 
 ## Model and evaluation behavior
 
@@ -71,6 +86,8 @@ finite-coverage repair where that behavior belongs in the common layer.
   Naive submission, and dataset-diagnostic cluster execution.
 - Added reusable foundation summary, local leaderboard, and
   feature-performance reporting commands with external Seasonal-root support.
+- Made reusable plotting headless and kept dense accuracy/time comparisons
+  readable by moving more than eight labels into an external legend.
 
 ## Packaging and documentation
 

@@ -1,20 +1,11 @@
-"""Dependency-light regression for model-job statistics and their one-off refresh."""
+"""Dependency-light regression for the maintained model-job statistics."""
 
-import importlib.util
-import json
 from pathlib import Path
-import tempfile
 import unittest
 
 import numpy as np
 
 from timebench.evaluation.metrics import summarize_metric_values
-
-SPEC = importlib.util.spec_from_file_location(
-    "backfill_metric_dispersion", Path(__file__).parents[1] / "scripts/backfill_metric_dispersion.py"
-)
-REFRESH = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(REFRESH)
 
 
 class MetricDispersionTest(unittest.TestCase):
@@ -30,43 +21,15 @@ class MetricDispersionTest(unittest.TestCase):
             self.assertIsNone(empty[field])
         self.assertEqual(summarize_metric_values(np.array([7.0]), 1)["std"], 0.0)
 
-    def test_refresh_matches_job_and_preserves_metadata(self):
-        with tempfile.TemporaryDirectory() as directory:
-            task = Path(directory) / "run_1"
-            task.mkdir()
-            values = np.array([[[1.0, np.nan], [3.0, 5.0]]])
-            original = {
-                "launch_id": "selected_launch", "inference_seconds": 12.5,
-                "evaluation_grid": {"definition": REFRESH.EVALUATION_GRID_DEFINITION},
-                "metrics": {"MASE": {
-                    "mean": 3.0, "finite_values": 3, "evaluation_values": 3, "total_values": 4,
-                }},
-            }
-            summary = task / "metrics_summary.json"
-            summary.write_text(json.dumps(original), encoding="utf-8")
-            (task / "manifest.json").write_text(json.dumps({"status": "completed"}), encoding="utf-8")
-            np.savez_compressed(task / "metrics.npz", MASE=values)
-            self.assertEqual(REFRESH.backfill([Path(directory)]), 1)
-            updated = json.loads(summary.read_text(encoding="utf-8"))
-            self.assertEqual(updated["metrics"]["MASE"], summarize_metric_values(values, 3))
-            for key in ("launch_id", "inference_seconds", "evaluation_grid"):
-                self.assertEqual(updated[key], original[key])
-            self.assertEqual(REFRESH.backfill([Path(directory)]), 1)
-            self.assertEqual(json.loads(summary.read_text(encoding="utf-8")), updated)
-
-    def test_missing_arrays_fail_without_rewriting(self):
-        with tempfile.TemporaryDirectory() as directory:
-            task = Path(directory)
-            summary = task / "metrics_summary.json"
-            summary.write_text(json.dumps({
-                "evaluation_grid": {"definition": REFRESH.EVALUATION_GRID_DEFINITION},
-                "metrics": {},
-            }), encoding="utf-8")
-            (task / "manifest.json").write_text(json.dumps({"status": "completed"}), encoding="utf-8")
-            original = summary.read_text(encoding="utf-8")
-            with self.assertRaises(FileNotFoundError):
-                REFRESH.backfill([task])
-            self.assertEqual(summary.read_text(encoding="utf-8"), original)
+    def test_mean_is_unchanged_and_saver_uses_shared_statistics(self):
+        values = np.array([1.0, 2.0, 7.0, np.nan], dtype=np.float32)
+        result = summarize_metric_values(values, 3)
+        self.assertEqual(result["mean"], float(np.mean(values[np.isfinite(values)])))
+        self.assertAlmostEqual(result["std"] ** 2, result["variance"])
+        saver = Path(__file__).parents[1] / "timebench/evaluation/saver.py"
+        self.assertIn("metric_summaries[metric_name] = summarize_metric_values(", saver.read_text(encoding="utf-8"))
+        seasonal = Path(__file__).parents[2] / "experiments/seasonal_naive.py"
+        self.assertIn("create_evaluation_grid=True", seasonal.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

@@ -98,9 +98,6 @@ class ImprovedMaintenanceContractTest(unittest.TestCase):
         registry = (
             PROJECT_ROOT / "src/slurm/foundation_model_runners.sh"
         ).read_text(encoding="utf-8")
-        summary = (
-            PROJECT_ROOT / "src/slurm/summarize_foundation_models.sh"
-        ).read_text(encoding="utf-8")
         grid_resolver = (
             PROJECT_ROOT / "src/timebench/pipeline/evaluation_grid.py"
         ).read_text(encoding="utf-8")
@@ -111,12 +108,31 @@ class ImprovedMaintenanceContractTest(unittest.TestCase):
         self.assertIn("default_seasonal_root=\"$TIME_OUTPUTS\"", runtime)
         self.assertIn("timesfm3", registry)
         self.assertIn("foundation_model_schedule.sh", registry)
-        self.assertIn(
-            '--seasonal-naive-results-dir "$TIME_SEASONAL_TASKS_ROOT"', summary
-        )
         self.assertIn("Seasonal Naive task artifacts", grid_resolver)
         self.assertTrue((PROJECT_ROOT / "scripts/dataset_diagnostics.sh").is_file())
         self.assertTrue((PROJECT_ROOT / "sync_results_to_dgx.sh").is_file())
+
+    def test_experiment_launchers_belong_to_children(self) -> None:
+        for name in (
+            "submit_foundation_models.sh", "run_all_foundation_models.sh",
+            "channels_comparison.sh", "run_chronos2_comparison.sh",
+            "plot_feature_performance.py", "compute_local_leaderboard.py",
+        ):
+            self.assertFalse((PROJECT_ROOT / "scripts" / name).exists(), name)
+        self.assertTrue((PROJECT_ROOT / "scripts/compute_foundation_summary.py").is_file())
+        for name in (
+            "foundation_model_schedule.sh", "benchmark_foundation_models.sh",
+            "summarize_foundation_models.sh", "run_chronos2_comparison.sh",
+        ):
+            self.assertFalse((PROJECT_ROOT / "src/slurm" / name).exists(), name)
+        for cluster, suffix in (("dgx", ""), ("selena", "_selena")):
+            fronts = PROJECT_ROOT / "slurm" / cluster
+            self.assertFalse((fronts / f"foundation_summary{suffix}.slurm").exists())
+            self.assertFalse(list((fronts / "chronos2_comparison").glob("*.slurm")))
+            self.assertEqual(
+                sorted(path.name for path in (fronts / "foundation_models").glob("*.slurm")),
+                [f"seasonal_naive{suffix}.slurm"],
+            )
 
     def test_seasonal_naive_uses_direct_deterministic_quantiles(self) -> None:
         experiment = (PROJECT_ROOT / "experiments/seasonal_naive.py").read_text(

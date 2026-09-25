@@ -52,18 +52,27 @@ that downstream projects compose into their own experiment workflows. The
 common layer also provides:
 
 - corrected chronological train, validation, and official test boundaries;
+- a shared validation-support mask that requires at least one finite value in
+  both context and future, so selection layers can fall back to their declared
+  default when no usable validation window remains;
 - deterministic Seasonal Naive quantiles and finite-pair MASE scaling;
 - explicit target-mode and covariate capability checks;
 - local-only foundation-model checkpoint loading;
 - accelerator-synchronized inference timing;
-- schema-1 task manifests, recovery, and result-selection policies;
+- schema-1 task manifests, recovery, and result-selection policies, including
+  a `computed` state that preserves fully written task artifacts until a
+  separate finalizer advances them to `completed`;
+- compact manifest references for stage-specific dependency identities;
 - compact metric summaries with finite-value coverage, population variance,
   and standard deviation across finite series-window-variate metric cells;
 - saved-Arrow feature extraction and reusable window auditing.
 - DGX/Selena runtime fronts, task status, artifact clearing and synchronization;
+- compute-node snapshots with explicit cgroup availability, plus per-stage
+  selected-device records for learned and CPU-only work;
 - reusable Seasonal Naive and dataset-diagnostic submission commands;
 - shared-grid foundation summaries, local leaderboard aggregation, and
-  feature-performance plotting.
+  headless feature/performance plotting. Large comparisons move dense labels
+  into an external legend instead of overlapping point annotations.
 
 An experiment checkout can generate Seasonal Naive into the common shared
 store or its own project output root:
@@ -76,25 +85,18 @@ bash scripts/submit_seasonal_naive.sh dgx project
 Use the same `TIME_SEASONAL_SCOPE` when launching consumers. An explicit
 `TIME_SEASONAL_ROOT` overrides the scope-derived location.
 
-Model jobs save each metric's `mean`, `std`, `variance`, and
+Model jobs, including Seasonal Naive, save each metric's `mean`, `std`, `variance`, and
 `dispersion_ddof=0` in `metrics_summary.json`. Dispersion uses the same finite
 cells as the arithmetic task mean, not repeated-run uncertainty. For scaled
 MASE, divide a task's MASE standard deviation by its matched Seasonal Naive
 task mean; divide its variance by the square of that mean. Lightweight result
 synchronization includes these JSON fields without transferring metric arrays.
 
-Existing completed tasks with the current Seasonal-defined evaluation grid can
-be refreshed once from their retained `metrics.npz` files, without inference:
+For a model-versus-Seasonal dispersion comparison, divide the model's task
+MASE variance by matched Seasonal task MASE variance on the same eligible
+cells. This variance ratio differs from the variance of scaled MASE above.
+Parity is 1; a zero Seasonal variance leaves the ratio undefined.
 
-```bash
-PYTHONPATH=src uv run --no-sync python src/scripts/backfill_metric_dispersion.py \
-  outputs/foundation_models/tasks
-```
-
-Supply the actual task roots when outputs are configured elsewhere. The
-temporary refresh preserves means, coverage, timing, manifests, and selection;
-missing raw metrics stop it before any summary is rewritten. Summary-only jobs
-can then be rerun normally; existing aggregate mean scores are unchanged.
 
 The parent registry describes all supported foundation runners but selects no
 batch experiment. A downstream repository must provide
