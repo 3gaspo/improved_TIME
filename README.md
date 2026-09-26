@@ -37,6 +37,12 @@ portable path contract:
 | `TIME_SEASONAL_SCOPE` | `shared` | Use shared or project-owned Seasonal artifacts |
 | `TIME_SEASONAL_ROOT` | scope-derived | Explicit Seasonal Naive artifact root override |
 
+Ordinary jobs default to the current project's `outputs/` and `logs/`; on
+Selena those defaults are below the project's scratch root. Explicit
+`OUTPUTS_ROOT` and `LOGS_ROOT` values take precedence. The shared Seasonal
+producer uses that mechanism for both its artifacts and logs, while consumers
+resolve the resulting task tree through `TIME_SEASONAL_TASKS_ROOT`.
+
 The official TIME dataset can be prepared on an internet-connected host with:
 
 ```bash
