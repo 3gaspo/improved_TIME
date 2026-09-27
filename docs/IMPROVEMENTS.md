@@ -23,6 +23,10 @@ finite-coverage repair where that behavior belongs in the common layer.
 - Added schema-1 task manifests, monotonic `run_n` allocation, exact-config
   skip/resume/overwrite behavior, interruption recording, explicit repeat and
   scientific-configuration selection, and selected-run pinning.
+- Added explicit task-specific model fields to result selection. Reports may
+  ignore a declared field such as Seasonal Naive's frequency-dependent
+  `season_length` only when comparing different tasks; conflicting
+  configurations for the same task remain an error.
 - Added strict optional and required cross-experiment compact-result reuse.
 - Added compact `metrics_summary.json` artifacts with finite and total metric
   counts while retaining raw per-window metrics separately.
