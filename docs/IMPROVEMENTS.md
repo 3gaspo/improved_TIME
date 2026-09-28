@@ -6,6 +6,11 @@ consolidates reusable behavior from the former Improved repository at commit
 `fd04c9f48034e2d7c604651ec23b2a177061900f`, including its final uncommitted
 finite-coverage repair where that behavior belongs in the common layer.
 
+- 2026-09-28 made the shared Seasonal baseline an independent artifact project
+  at `seasonal/outputs/seasonal_naive/{inference,evaluations}` with
+  experiment-owned logs. Producer and consumer paths no longer encode the
+  unrelated `foundation_models/tasks` hierarchy.
+
 ## Runtime and lifecycle infrastructure
 
 - Added the shared `computed` task state: outer launch interruption changes

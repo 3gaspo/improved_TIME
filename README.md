@@ -35,14 +35,17 @@ portable path contract:
 | `TIME_OUTPUTS` | `outputs/dgx/` | DGX/local generated artifacts |
 | `TIME_LOGS` | `logs/dgx/` | DGX/local runtime logs |
 | `TIME_SEASONAL_SCOPE` | `shared` | Use shared or project-owned Seasonal artifacts |
-| `TIME_SEASONAL_ROOT` | scope-derived | Explicit Seasonal Naive artifact root override |
+| `TIME_SEASONAL_ROOT` | scope-derived | Root of the independent Seasonal checkout |
+| `TIME_SEASONAL_EVALUATIONS_ROOT` | scope-derived | Completed shared Seasonal evaluations |
 
 Ordinary DGX/local jobs default to the current project's `outputs/dgx/` and
 `logs/dgx/`; synchronized Selena artifacts use `outputs/selena/` and
 `logs/selena/`, while Selena jobs write below the project's scratch root. Explicit
-`OUTPUTS_ROOT` and `LOGS_ROOT` values take precedence. The shared Seasonal
-producer uses that mechanism for both its artifacts and logs, while consumers
-resolve the resulting task tree through `TIME_SEASONAL_TASKS_ROOT`.
+`OUTPUTS_ROOT` and `LOGS_ROOT` values take precedence. The independent shared
+Seasonal checkout stores inference and evaluations below
+`outputs/seasonal_naive/` and runtime records below `logs/seasonal_naive/`.
+Consumers resolve its completed evaluations through
+`TIME_SEASONAL_EVALUATIONS_ROOT`.
 
 The official TIME dataset can be prepared on an internet-connected host with:
 
