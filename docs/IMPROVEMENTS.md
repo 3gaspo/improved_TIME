@@ -113,3 +113,17 @@ status implementations. Downstream repositories own their active scientific
 schedules, comparison-specific launchers and utilities, scheduler resources,
 artifact selections, result documents, conclusions, and all log/output
 payloads. Improved TIME never executes or records those experiments itself.
+
+## 2026-09-28 artifact-contract synchronization
+
+- Standardized project-owned artifacts below
+  `outputs/<surface>/<experiment>/...` and
+  `logs/<surface>/<experiment>/...`, including experiment-owned reports,
+  Slurm streams, Hydra state, stage logs, and workflow status.
+- Run directories now use meaningful scientific identity and `run_n`; launch
+  IDs and timestamps remain manifest or log metadata. `manifest.json` is the
+  authoritative run configuration and lifecycle record, and allocation skips
+  matching completed runs by default.
+- Foundation evaluation now records explicit fallback and prediction-NaN
+  metadata so compatible backbones can complete robustly without hiding which
+  outputs required fallback handling.

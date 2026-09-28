@@ -105,7 +105,14 @@ class ImprovedMaintenanceContractTest(unittest.TestCase):
         self.assertIn("dgx|selena [shared|project]", producer)
         self.assertIn("OUTPUTS_ROOT=$TIME_SEASONAL_ROOT", producer)
         self.assertIn("LOGS_ROOT=$TIME_SEASONAL_LOGS_ROOT", producer)
-        self.assertIn('--output="$TIME_SEASONAL_LOGS_ROOT/%x_%j.out"', producer)
+        self.assertIn(
+            '--output="$TIME_SEASONAL_LOGS_ROOT/foundation_models/slurm/%x_%j.out"',
+            producer,
+        )
+        self.assertIn(
+            '--error="$TIME_SEASONAL_LOGS_ROOT/foundation_models/slurm/%x_%j.err"',
+            producer,
+        )
         self.assertIn('TIME_SEASONAL_SCOPE="${TIME_SEASONAL_SCOPE:-shared}"', runtime)
         self.assertIn("default_seasonal_root=\"$TIME_OUTPUTS\"", runtime)
         self.assertIn('OUTPUTS_ROOT="${OUTPUTS_ROOT:-${TIME_OUTPUTS:-$default_outputs_root}}"', runtime)

@@ -32,13 +32,14 @@ portable path contract:
 | `TIME_DATASET` | `datasets/hf_dataset/` | Saved-Arrow TIME datasets |
 | `TIME_METADATA` | `datasets/time_metadata/` | Dataset-derived audits and features |
 | `TIME_WEIGHTS` | `weights/` | Model checkpoints and caches |
-| `TIME_OUTPUTS` | `outputs/` | Project-owned generated artifacts |
-| `TIME_LOGS` | `logs/` | Project-owned runtime logs |
+| `TIME_OUTPUTS` | `outputs/dgx/` | DGX/local generated artifacts |
+| `TIME_LOGS` | `logs/dgx/` | DGX/local runtime logs |
 | `TIME_SEASONAL_SCOPE` | `shared` | Use shared or project-owned Seasonal artifacts |
 | `TIME_SEASONAL_ROOT` | scope-derived | Explicit Seasonal Naive artifact root override |
 
-Ordinary jobs default to the current project's `outputs/` and `logs/`; on
-Selena those defaults are below the project's scratch root. Explicit
+Ordinary DGX/local jobs default to the current project's `outputs/dgx/` and
+`logs/dgx/`; synchronized Selena artifacts use `outputs/selena/` and
+`logs/selena/`, while Selena jobs write below the project's scratch root. Explicit
 `OUTPUTS_ROOT` and `LOGS_ROOT` values take precedence. The shared Seasonal
 producer uses that mechanism for both its artifacts and logs, while consumers
 resolve the resulting task tree through `TIME_SEASONAL_TASKS_ROOT`.
@@ -70,7 +71,8 @@ common layer also provides:
   separate finalizer advances them to `completed`;
 - compact manifest references for stage-specific dependency identities;
 - compact metric summaries with finite-value coverage, population variance,
-  and standard deviation across finite series-window-variate metric cells;
+  standard deviation across finite series-window-variate metric cells, and
+  explicit fallback counts/reasons on evaluated cells;
 - saved-Arrow feature extraction and reusable window auditing.
 - DGX/Selena runtime fronts, task status, artifact clearing and synchronization;
 - compute-node snapshots with explicit cgroup availability, plus per-stage
@@ -78,7 +80,15 @@ common layer also provides:
 - reusable Seasonal Naive and dataset-diagnostic submission commands;
 - shared-grid foundation summaries, local leaderboard aggregation, and
   headless feature/performance plotting. Large comparisons move dense labels
-  into an external legend instead of overlapping point annotations.
+into an external legend instead of overlapping point annotations.
+
+Generated scientific artifacts follow `<O>/<experiment>/...`; reports remain
+under `<O>/<experiment>/reports/`. Runtime streams, Hydra directories, stage
+logs, and workflow status remain under `logs/<surface>/<experiment>/`.
+`run_n/manifest.json` is the authoritative scientific configuration and
+lifecycle record. Exact completed runs are skipped by default, report readers
+select the latest matching run by default, and launch IDs or timestamps appear
+only in manifests and logs.
 
 An experiment checkout can generate Seasonal Naive into the common shared
 store or its own project output root:
@@ -126,7 +136,8 @@ src/timebench/pipeline/    task manifests, recovery, and result selection
 src/timebench/feature/     dataset features and performance associations
 src/tests/                 focused reusable contract checks
 datasets/, weights/        ignored local input placeholders
-outputs/, logs/            ignored local artifact placeholders
+outputs/{dgx,selena}/      ignored artifacts separated by surface
+logs/{dgx,selena}/         ignored runtime records separated by surface
 clear_selena_artifacts.sh  project-scoped artifact clearing
 sync_* / publish_job.sh    reusable transfer and publication helpers
 ```
